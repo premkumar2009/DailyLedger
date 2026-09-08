@@ -1,0 +1,53 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  passwordHash String
+  createdAt    DateTime      @default(now())
+  records      DailyRecord[]
+}
+
+model DailyRecord {
+  id             String        @id @default(cuid())
+  userId         String
+  recordDate     String
+  openingBalance Decimal       @default(0)
+  closingBalance Decimal       @default(0)
+  status         RecordStatus  @default(OPEN)
+  closedAt       DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions   Transaction[]
+
+  @@unique([userId, recordDate])
+  @@index([userId, recordDate])
+}
+
+model Transaction {
+  id                String      @id @default(cuid())
+  dailyRecordId     String
+  userId            String
+  transactionNumber Int
+  transactionTime   DateTime    @default(now())
+  description       String
+  amount            Decimal
+  createdAt         DateTime    @default(now())
+  dailyRecord       DailyRecord @relation(fields: [dailyRecordId], references: [id], onDelete: Cascade)
+
+  @@unique([dailyRecordId, transactionNumber])
+  @@index([userId, createdAt])
+}
+
+enum RecordStatus {
+  OPEN
+  CLOSED
+}
