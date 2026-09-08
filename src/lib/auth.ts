@@ -3,7 +3,11 @@ import { createHmac, randomBytes, scryptSync, timingSafeEqual } from 'node:crypt
 import { db } from './db';
 
 const COOKIE = 'ledger_session';
-const secret = () => process.env.SESSION_SECRET || 'development-only-change-me';
+const secret = () => {
+  const value = process.env.SESSION_SECRET;
+  if (!value && process.env.NODE_ENV === 'production') throw new Error('SESSION_SECRET is required in production.');
+  return value || 'development-only-change-me';
+};
 
 export function hashPassword(password: string) {
   const salt = randomBytes(16).toString('hex');
